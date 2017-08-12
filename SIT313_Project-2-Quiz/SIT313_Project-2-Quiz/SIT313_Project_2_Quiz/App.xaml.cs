@@ -13,7 +13,11 @@ namespace SIT313_Project_2_Quiz
         {
             InitializeComponent();
 
-            MainPage = new SIT313_Project_2_Quiz.MainPage();
+            /* Root page of the app
+             * Calls a navigation stack for transitions. This was provided in the tutorial below.
+             * URL: {https://www.youtube.com/watch?v=OT2pwGQgAqQ}
+             */
+            MainPage = new NavigationPage(new SIT313_Project_2_Quiz.MainPage());
         }
 
         protected override void OnStart()

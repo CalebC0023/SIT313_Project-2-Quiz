@@ -35,6 +35,15 @@ namespace SIT313_Project_2_Quiz
                 HorizontalOptions = LayoutOptions.CenterAndExpand //Control placement.
             };
 
+            //The entry textfield.
+            Entry entry = new Entry
+            {
+                Placeholder = "Enter Username",
+                HorizontalOptions = LayoutOptions.FillAndExpand,
+            };
+
+            entry.Behaviors.Add(new Basic_Entry_Behaviors());
+
             //The content StackLayout.
             StackLayout layout_content = new StackLayout
             {
@@ -62,12 +71,7 @@ namespace SIT313_Project_2_Quiz
                                 HorizontalOptions = LayoutOptions.Start,
                                 VerticalOptions = LayoutOptions.Center
                             },
-                            //The entry textfield.
-                            new Entry
-                            {
-                                Placeholder = "Enter Username",
-                                HorizontalOptions = LayoutOptions.FillAndExpand,
-                            }
+                            entry
                         }
                     },
 

@@ -180,6 +180,16 @@ namespace SIT313_Project_2_Quiz
         public StackLayout RegisterTextFields(string label, bool isPassword)
         {
 
+            //The entry textfield.
+            Entry entry = new Entry
+            {
+                Placeholder = label, //Set appropriate label.
+                IsPassword = isPassword, //Set block characters to hide ONLY passwords.
+                HorizontalOptions = LayoutOptions.FillAndExpand,
+            };
+
+            entry.Behaviors.Add(new Basic_Entry_Behaviors());
+
             //Return this Stacklayout after applying the changes
             return new StackLayout
             {
@@ -195,13 +205,7 @@ namespace SIT313_Project_2_Quiz
                         HorizontalOptions = LayoutOptions.Start,
                         VerticalOptions = LayoutOptions.Center
                     },
-                    //The entry textfield.
-                    new Entry
-                    {
-                        Placeholder = label, //Set appropriate label.
-                        IsPassword = isPassword, //Set block characters to hide ONLY passwords.
-                        HorizontalOptions = LayoutOptions.FillAndExpand,
-                    }
+                    entry
                 }
             };
 

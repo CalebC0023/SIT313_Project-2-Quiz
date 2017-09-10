@@ -188,8 +188,6 @@ namespace SIT313_Project_2_Quiz
                 HorizontalOptions = LayoutOptions.FillAndExpand,
             };
 
-            entry.Behaviors.Add(new Basic_Entry_Behaviors());
-
             //Return this Stacklayout after applying the changes
             return new StackLayout
             {

@@ -1,4 +1,35 @@
-﻿using System;
+﻿/*
+ * This app is derived from the quiz app completed in SIT313: Assignment 1.
+ * The following URL references are from the Assignment 1.
+ *   
+ * - Create transition stack.
+ *   URL: {https://www.youtube.com/watch?v=OT2pwGQgAqQ}
+ *   
+ * - Create different layouts.
+ *   URL: {https://developer.xamarin.com/guides/xamarin-forms/user-interface/controls/layouts/}
+ *   URL: {https://github.com/xamarin/xamarin-forms-samples/blob/master/FormsGallery/FormsGallery/FormsGallery/StackLayoutDemoPage.cs}
+ *   
+ * - Create click events for buttons.
+ *   URL: {https://blog.xamarin.com/simplifying-events-with-commanding/}
+ *   
+ * - Create click events on labels.
+ *   URL: {https://developer.xamarin.com/guides/xamarin-forms/application-fundamentals/gestures/tap/}
+ *   URL: {https://stackoverflow.com/questions/35811060/how-to-create-click-event-on-label-in-xamarin-forms-dynamically}
+ *   
+ * - Hex color codes.
+ *   URL: {http://htmlcolorcodes.com/}
+ * 
+ * - Dynamically change layout depending on orientation.
+ *   URL: {https://www.youtube.com/watch?v=pYVjQco0e-Y}
+ *   
+ * - Transition to other pages.
+ *   URL: {https://www.youtube.com/watch?v=OT2pwGQgAqQ}
+ *
+ * 
+ * The references for Assignment 2 will be included within the code where they are first used.
+ */
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,7 +41,7 @@ namespace SIT313_Project_2_Quiz
     public partial class MainPage : ContentPage
     {
 
-        //Public class variables which allows dynamic changes to its properties
+        //Private class variables which allows dynamic changes to its properties
         private StackLayout layout_content;
         private StackLayout layout_btn_group;
 
@@ -22,23 +53,18 @@ namespace SIT313_Project_2_Quiz
             BuildLoginPage();
         }
 
+        /* Building the initial layout for the main login page
+         */
+
         public void BuildLoginPage()
         {
-
-            /*
-             *  The follwing codes are referenced from these URLs.
-             *  Base URL: {https://developer.xamarin.com/guides/xamarin-forms/user-interface/controls/layouts/}
-             *  Specific Layout URL: {https://developer.xamarin.com/api/type/Xamarin.Forms.StackLayout/}
-             *  
-             *  It shows some examples of how to dynamically build a layout from the .cs file.
-             */
 
             //The header label.
             Label header = new Label
             {
                 //Set the text and its colour.
                 Text = "SIT313 Quiz!",
-                TextColor = Color.FromHex("FFFFFF"), //Color codes are taken from this URL: {http://htmlcolorcodes.com/}
+                TextColor = Color.FromHex("FFFFFF"),
 
                 //Set the text's font size and current attribute (e.g. Bold, Italic, etc).
                 FontAttributes = FontAttributes.Bold,
@@ -48,10 +74,11 @@ namespace SIT313_Project_2_Quiz
                 BackgroundColor = Color.FromHex("000020"),
 
                 //Set where this object will 'fit' in the page.
-                HorizontalOptions = LayoutOptions.CenterAndExpand //Controls horizontal placement. Vertical placement: 'VerticalOptions'.
+                //Horizontal placement: 'HorizontalOptions'. Vertical placement: 'VerticalOptions'.
+                HorizontalOptions = LayoutOptions.CenterAndExpand
             };
 
-            //Grouped objects to make layout orientation chnages easier.
+            //Grouped objects to make layout orientation changes easier.
             //Also defined to allow dynamic change of properties.
             layout_btn_group = new StackLayout
             {
@@ -72,17 +99,17 @@ namespace SIT313_Project_2_Quiz
             layout_content = new StackLayout
             {
 
-                Spacing = 3, //Assign appropriate spacing.
-                Orientation = StackOrientation.Vertical, //Set orientation to vertical (Display from top to bottom).
+                Spacing = 3,
+                Orientation = StackOrientation.Vertical,
                 VerticalOptions = LayoutOptions.FillAndExpand,
-                BackgroundColor = Color.FromHex("e6fcff"), //Set background colour.
-                Padding = new Thickness(7, 13, 7, 0), //Set the padding for a better style.
+                BackgroundColor = Color.FromHex("e6fcff"),
+                Padding = new Thickness(7, 13, 7, 0),
 
                 //The UI elements within this layout.
                 Children =
                 {
 
-                    //Grouped objects to make layout orientation chnages easier.
+                    //Grouped objects to make layout orientation changes easier.
                     new StackLayout {
                         Orientation = StackOrientation.Vertical,
                         HorizontalOptions = LayoutOptions.FillAndExpand,
@@ -102,11 +129,10 @@ namespace SIT313_Project_2_Quiz
             };
 
             //Combine all components for the final layout.
-            //URL: {https://github.com/xamarin/xamarin-forms-samples/blob/master/FormsGallery/FormsGallery/FormsGallery/StackLayoutDemoPage.cs}
             this.Content = new StackLayout
             {
-                BackgroundColor = Color.FromHex("000020"), //Set base background colour.
-                Orientation = StackOrientation.Vertical, //Set base orientation.
+                BackgroundColor = Color.FromHex("000020"),
+                Orientation = StackOrientation.Vertical,
                 Children =
                 {
                     header,
@@ -120,34 +146,93 @@ namespace SIT313_Project_2_Quiz
         public StackLayout LoginTextFields(string label, bool isPassWord)
         {
 
-            Entry entry = new Entry
+            //Define the base Entry field.
+            Entry MainEntry = new Entry
             {
-                Placeholder = label, //Set appropriate label.
+                Placeholder = label, //Set appropriate placeholder text.
                 IsPassword = isPassWord, //If true, set block characters to hide passwords.
                 HorizontalOptions = LayoutOptions.FillAndExpand,
             };
 
-            entry.Behaviors.Add(new Basic_Entry_Behaviors());
+            //Define the Label for displaying errors before submitting.
+            Label ErrorLabel = new Label
+            {
+                FontSize = 1,
+                TextColor = Color.FromHex("ff0000"),
+                HorizontalOptions = LayoutOptions.FillAndExpand,
+            };
+
+            /* The following reference below is to demonstrate how to handle TextChanged events (or similar events).
+             * URL: {https://stackoverflow.com/questions/43595801/handle-event-when-label-text-change}
+             */
+
+            //Define the 'TextChanged' event for the entry (depending on each ).
+            if (label == "Username")
+            {
+                MainEntry.TextChanged += (s, e) =>
+                {
+                    if (e.NewTextValue == "" || e.NewTextValue == null)
+                    {
+                        ErrorLabel.FontSize = 12;
+                        ErrorLabel.Text = "The Username must be entered.";
+                    }
+                    else
+                    {
+                        ErrorLabel.FontSize = 1;
+                        ErrorLabel.Text = "";
+                    }
+                };
+            }
+            else if (label == "Password")
+            {
+                MainEntry.TextChanged += (s, e) =>
+                {
+                    if (e.NewTextValue == "" || e.NewTextValue == null)
+                    {
+                        ErrorLabel.FontSize = 12;
+                        ErrorLabel.Text = "The Password must be entered.";
+                    }
+                    else
+                    {
+                        ErrorLabel.FontSize = 1;
+                        ErrorLabel.Text = "";
+                    }
+                };
+            }
 
             //Return this Stacklayout after applying the changes
             return new StackLayout
             {
-                Spacing = 1,
-                Orientation = StackOrientation.Horizontal, //Set orientation to horizontal (Display from left to right).
+                Orientation = StackOrientation.Vertical,
+                Spacing = 0,
                 Children =
                 {
-                    //The label for the textfield.
-                    new Label
+                    new StackLayout
                     {
-                        Text = label + ":", //Set appropriate label.
-                        HorizontalOptions = LayoutOptions.Start,
-                        VerticalOptions = LayoutOptions.Center
+                        Spacing = 1,
+                        Orientation = StackOrientation.Horizontal,
+                        Children =
+                        {
+                            //The label for the textfield.
+                            new Label
+                            {
+                                Text = label + ":", //Set appropriate label.
+                                HorizontalOptions = LayoutOptions.Start,
+                                VerticalOptions = LayoutOptions.Center
+                            },
+                            //The entry textfield.
+                            MainEntry
+                        }
                     },
-                    //The entry textfield.
-                    entry
+                    ErrorLabel
                 }
             };
 
+        }
+
+        private void MainEntry_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            throw new NotImplementedException();
         }
 
         //Base layout of buttons
@@ -166,10 +251,6 @@ namespace SIT313_Project_2_Quiz
                 HorizontalOptions = LayoutOptions.Center
             };
 
-            /* Verify which button click event is applied.
-             * Use of the 'Command' object is found in the link below.
-             * URL: {https://blog.xamarin.com/simplifying-events-with-commanding/}
-             */
             if (label.Equals("Login"))
             {
                 btn.Command = new Command(ToProfile);
@@ -198,12 +279,6 @@ namespace SIT313_Project_2_Quiz
                 HorizontalOptions = LayoutOptions.Center
             };
 
-            /* The following codes on command and gestures derived from the
-             * following links.
-             * URL: {https://developer.xamarin.com/guides/xamarin-forms/application-fundamentals/gestures/tap/}
-             * URL: {https://stackoverflow.com/questions/35811060/how-to-create-click-event-on-label-in-xamarin-forms-dynamically}
-             */
-
             //Add the 'onclick' event
             var lbl_tap = new TapGestureRecognizer();
             lbl_tap.Command = new Command(ToGetPassword);
@@ -214,11 +289,12 @@ namespace SIT313_Project_2_Quiz
             return get_pw_lbl; //Return the custom label.
         }
 
-        /* Gets the current orientation.
-         * With the help from the tutorial below, the following code allows
-         * the layout to dynamically change depending on the orientation.
-         * URL: {https://www.youtube.com/watch?v=pYVjQco0e-Y}
+        /* End of building page layout */
+
+
+        /* Dynamic layout changes depending on orientation.
          */
+
         protected override void OnSizeAllocated(double width, double height)
         {
             base.OnSizeAllocated(width, height);
@@ -238,10 +314,13 @@ namespace SIT313_Project_2_Quiz
             }
         }
 
-        /* Transitions to the 'GetPWPage'.
-         * The following functions on transitions are referenced from the link below.
-         * URL: {https://www.youtube.com/watch?v=OT2pwGQgAqQ}
+        /* End of dynamic layout */
+
+
+        /* Button Events
          */
+
+        //Transitions to the 'ProfilePage'.
         async void ToProfile()
         {
             await Navigation.PushAsync(new ProfilePage());
@@ -258,6 +337,8 @@ namespace SIT313_Project_2_Quiz
         {
             await Navigation.PushAsync(new GetPWPage());
         }
+
+        /* End of Button Events */
 
     }
 

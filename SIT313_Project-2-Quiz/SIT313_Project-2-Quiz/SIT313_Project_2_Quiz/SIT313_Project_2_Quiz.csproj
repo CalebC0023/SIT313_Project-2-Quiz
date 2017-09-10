@@ -44,7 +44,6 @@
     <Compile Include="MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Object_Behaviors.cs" />
     <Compile Include="PastResultPage.xaml.cs">
       <DependentUpon>PastResultPage.xaml</DependentUpon>
     </Compile>

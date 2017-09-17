@@ -34,6 +34,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+
 using Xamarin.Forms;
 
 namespace SIT313_Project_2_Quiz
@@ -178,8 +179,12 @@ namespace SIT313_Project_2_Quiz
                     }
                     else
                     {
-                        ErrorLabel.FontSize = 1;
-                        ErrorLabel.Text = "";
+                        ErrorLabel.FontSize = 12;
+                        //
+                        byte[] test1 = Encoding.UTF8.GetBytes(MainEntry.Text);
+                        string test2 = Encoding.UTF8.GetString(test1, 0, test1.Length);
+                        //
+                        ErrorLabel.Text = "Test 1:" + test1 + ", Test 2:" + test2;
                     }
                 };
             }

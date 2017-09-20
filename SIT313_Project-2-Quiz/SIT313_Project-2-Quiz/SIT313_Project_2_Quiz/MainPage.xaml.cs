@@ -36,6 +36,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Xamarin.Forms;
+using PCLCrypto;
 
 namespace SIT313_Project_2_Quiz
 {
@@ -45,6 +46,12 @@ namespace SIT313_Project_2_Quiz
         //Private class variables which allows dynamic changes to its properties
         private StackLayout layout_content;
         private StackLayout layout_btn_group;
+
+        //Temporarily store the password for verification.
+        private string _password = null;
+        private string test2 = null;
+
+        IHashAlgorithmProvider pwHash = WinRTCrypto.HashAlgorithmProvider.OpenAlgorithm(HashAlgorithm.Sha256);
 
         public MainPage()
         {
@@ -155,89 +162,59 @@ namespace SIT313_Project_2_Quiz
                 HorizontalOptions = LayoutOptions.FillAndExpand,
             };
 
-            //Define the Label for displaying errors before submitting.
-            Label ErrorLabel = new Label
-            {
-                FontSize = 1,
-                TextColor = Color.FromHex("ff0000"),
-                HorizontalOptions = LayoutOptions.FillAndExpand,
-            };
-
             /* The following reference below is to demonstrate how to handle TextChanged events (or similar events).
              * URL: {https://stackoverflow.com/questions/43595801/handle-event-when-label-text-change}
              */
 
-            //Define the 'TextChanged' event for the entry (depending on each ).
+            //Define the 'TextChanged' event for the entry for the Username and Password.
             if (label == "Username")
             {
                 MainEntry.TextChanged += (s, e) =>
                 {
-                    if (e.NewTextValue == "" || e.NewTextValue == null)
-                    {
-                        ErrorLabel.FontSize = 12;
-                        ErrorLabel.Text = "The Username must be entered.";
-                    }
-                    else
-                    {
-                        ErrorLabel.FontSize = 12;
-                        //
-                        byte[] test1 = Encoding.UTF8.GetBytes(MainEntry.Text);
-                        string test2 = Encoding.UTF8.GetString(test1, 0, test1.Length);
-                        //
-                        ErrorLabel.Text = "Test 1:" + test1 + ", Test 2:" + test2;
-                    }
+
+                    //Convert from bytes
+                    byte[] _username = Encoding.UTF8.GetBytes(e.NewTextValue);
+
+                    test2 = Convert.ToBase64String(_username);
+
+                    //Convert back to string.
+                    byte[] test = Convert.FromBase64String(test2);
+                    
+                    Current_Data.Username = Encoding.UTF8.GetString(test, 0, test.Length);
                 };
             }
             else if (label == "Password")
             {
                 MainEntry.TextChanged += (s, e) =>
                 {
-                    if (e.NewTextValue == "" || e.NewTextValue == null)
-                    {
-                        ErrorLabel.FontSize = 12;
-                        ErrorLabel.Text = "The Password must be entered.";
-                    }
-                    else
-                    {
-                        ErrorLabel.FontSize = 1;
-                        ErrorLabel.Text = "";
-                    }
+                    //URL: {https://stackoverflow.com/questions/40557467/xamarin-pclcrypto-sha256-give-different-hash}
+                    StringBuilder sb = new StringBuilder();
+                    foreach (byte b in pwHash.HashData(Encoding.UTF8.GetBytes(e.NewTextValue)))
+                        sb.Append(b.ToString("X2"));
+
+                    _password = sb.ToString();
                 };
             }
 
             //Return this Stacklayout after applying the changes
             return new StackLayout
             {
-                Orientation = StackOrientation.Vertical,
-                Spacing = 0,
+                Spacing = 1,
+                Orientation = StackOrientation.Horizontal,
                 Children =
                 {
-                    new StackLayout
+                    //The label for the textfield.
+                    new Label
                     {
-                        Spacing = 1,
-                        Orientation = StackOrientation.Horizontal,
-                        Children =
-                        {
-                            //The label for the textfield.
-                            new Label
-                            {
-                                Text = label + ":", //Set appropriate label.
-                                HorizontalOptions = LayoutOptions.Start,
-                                VerticalOptions = LayoutOptions.Center
-                            },
-                            //The entry textfield.
-                            MainEntry
-                        }
+                        Text = label + ":", //Set appropriate label.
+                        HorizontalOptions = LayoutOptions.Start,
+                        VerticalOptions = LayoutOptions.Center
                     },
-                    ErrorLabel
+                    //The entry textfield.
+                    MainEntry
                 }
             };
 
-        }
-
-        private void MainEntry_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            throw new NotImplementedException();
         }
 
         //Base layout of buttons
@@ -266,7 +243,7 @@ namespace SIT313_Project_2_Quiz
             }
             else if (label.Equals("Guest"))
             {
-                btn.Command = new Command(ToProfile);
+                btn.Command = new Command(ToGuestProfile);
             }
 
             return btn; //Return this button.
@@ -328,6 +305,16 @@ namespace SIT313_Project_2_Quiz
         //Transitions to the 'ProfilePage'.
         async void ToProfile()
         {
+            Current_Data.isGuest = false;
+            await this.DisplayAlert("User", "Username is " + Current_Data.Username + " and Base is " + _password, "OK");
+
+            //await Navigation.PushAsync(new ProfilePage());
+        }
+
+        //Transitions to the 'ProfilePage' as a 'Guest'.
+        async void ToGuestProfile()
+        {
+            Current_Data.isGuest = true;
             await Navigation.PushAsync(new ProfilePage());
         }
 

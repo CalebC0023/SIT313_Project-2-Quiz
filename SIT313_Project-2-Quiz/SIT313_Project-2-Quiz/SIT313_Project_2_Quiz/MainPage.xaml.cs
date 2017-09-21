@@ -37,6 +37,8 @@ using System.Threading.Tasks;
 
 using Xamarin.Forms;
 using PCLCrypto;
+using System.Net.Http;
+using Newtonsoft.Json;
 
 namespace SIT313_Project_2_Quiz
 {
@@ -175,12 +177,12 @@ namespace SIT313_Project_2_Quiz
                     //Convert from bytes
                     byte[] _username = Encoding.UTF8.GetBytes(e.NewTextValue);
 
-                    test2 = Convert.ToBase64String(_username);
+                    Current_Data.Username = Convert.ToBase64String(_username);
 
                     //Convert back to string.
-                    byte[] test = Convert.FromBase64String(test2);
+                    //byte[] test = Convert.FromBase64String(test2);
                     
-                    Current_Data.Username = Encoding.UTF8.GetString(test, 0, test.Length);
+                    //Current_Data.Username = Encoding.UTF8.GetString(test, 0, test.Length);
                 };
             }
             else if (label == "Password")
@@ -306,7 +308,41 @@ namespace SIT313_Project_2_Quiz
         async void ToProfile()
         {
             Current_Data.isGuest = false;
-            await this.DisplayAlert("User", "Username is " + Current_Data.Username + " and Base is " + _password, "OK");
+            //await this.DisplayAlert("User", "Username is " + Current_Data.Username + " and Base is " + _password, "OK");
+
+            try
+            {
+
+                string url = @"http://introtoapps.com/datastore.php?action=load&appid=214328958&objectid=users";
+                HttpClient client = new HttpClient();
+                var uri = new Uri(string.Format(url, string.Empty));
+                var response = await client.GetAsync(uri);
+                if (response.IsSuccessStatusCode)
+                {
+                    string content = await response.Content.ReadAsStringAsync();
+                    bool found = false;
+                    List<User> users = JsonConvert.DeserializeObject<List<User>>(content);
+                    foreach (User u in users)
+                    {
+                        if (u.test == Current_Data.Username)
+                            found = true;
+                    }
+
+                    if (found)
+                        await this.DisplayAlert("User", "User is here!", "OK");
+                    else
+                    {
+                        string url2 = string.Format("{0}{1}{2}","http://introtoapps.com/datastore.php?action=append&appid=214328958&objectid=users&data=%7B%22test%22%3a%22", Current_Data.Username, "%22%7D");
+                        var uri2 = new Uri(string.Format(url2, string.Empty));
+                        var response2 = await client.GetAsync(uri2);
+                        await this.DisplayAlert("User", "Test", "OK");
+                    }
+                }
+            }
+            catch(Exception e)
+            {
+                await this.DisplayAlert("Alert", e.ToString(), "OK");
+            }
 
             //await Navigation.PushAsync(new ProfilePage());
         }

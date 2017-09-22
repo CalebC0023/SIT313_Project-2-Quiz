@@ -28,6 +28,8 @@ namespace SIT313_Project_2_Quiz.Droid
 		{
 			global::PCLCrypto.Resource.String.ApplicationName = global::SIT313_Project_2_Quiz.Droid.Resource.String.ApplicationName;
 			global::PCLCrypto.Resource.String.Hello = global::SIT313_Project_2_Quiz.Droid.Resource.String.Hello;
+			global::PCLStorage.Resource.String.ApplicationName = global::SIT313_Project_2_Quiz.Droid.Resource.String.ApplicationName;
+			global::PCLStorage.Resource.String.Hello = global::SIT313_Project_2_Quiz.Droid.Resource.String.Hello;
 			global::Xamarin.Forms.Platform.Android.Resource.Attribute.actionBarSize = global::SIT313_Project_2_Quiz.Droid.Resource.Attribute.actionBarSize;
 		}
 		

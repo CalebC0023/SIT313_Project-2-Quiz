@@ -36,11 +36,6 @@ namespace SIT313_Project_2_Quiz
             BuildQuizPage(); //Build the base layout.
         }
 
-        /* Get the Objects in the JSON file.
-         * The following code is referenced from the links below.
-         * URL: {https://www.youtube.com/watch?v=RCcWQCxVrus}
-         * URL: {https://www.youtube.com/watch?v=VF2UC86jjs0}
-         */
         public void BuildJSONFile()
         {
 

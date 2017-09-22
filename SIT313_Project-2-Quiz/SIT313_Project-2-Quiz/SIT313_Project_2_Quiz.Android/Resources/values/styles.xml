@@ -28,6 +28,7 @@
   <style name="splashscreen" parent="Theme.AppCompat.Light.NoActionBar">
     <item name="android:windowBackground">@drawable/SIT313_Quiz_Icon</item>
     <item name="android:windowNoTitle">true</item>
+    <item name="android:windowActionBar">false</item>
     <item name="android:windowIsTranslucent">false</item>
     <item name="android:windowIsFloating">false</item>
     <item name="android:backgroundDimEnabled">true</item>

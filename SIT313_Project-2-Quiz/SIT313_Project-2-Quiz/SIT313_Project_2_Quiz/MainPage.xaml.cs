@@ -24,6 +24,11 @@
  *   
  * - Transition to other pages.
  *   URL: {https://www.youtube.com/watch?v=OT2pwGQgAqQ}
+ *   
+ * - Handle serializing/deserializing of JSON files.
+ *   URL: {https://www.youtube.com/watch?v=RCcWQCxVrus}
+ *   URL: {https://www.youtube.com/watch?v=VF2UC86jjs0}
+ *   URL: {https://stackoverflow.com/questions/38743280/deserialize-json-object-xamarin-android-c-sharp}
  *
  * 
  * The references for Assignment 2 will be included within the code where they are first used.
@@ -37,8 +42,6 @@ using System.Threading.Tasks;
 
 using Xamarin.Forms;
 using PCLCrypto;
-using System.Net.Http;
-using Newtonsoft.Json;
 
 namespace SIT313_Project_2_Quiz
 {
@@ -48,7 +51,7 @@ namespace SIT313_Project_2_Quiz
         //Private class variables which allows dynamic changes to its properties
         private StackLayout layout_content;
         private StackLayout layout_btn_group;
-
+        
         //Temporarily store the password for verification.
         private string _password = null;
         private string test2 = null;
@@ -308,42 +311,17 @@ namespace SIT313_Project_2_Quiz
         async void ToProfile()
         {
             Current_Data.isGuest = false;
-            //await this.DisplayAlert("User", "Username is " + Current_Data.Username + " and Base is " + _password, "OK");
+            StringBuilder sb = new StringBuilder();
 
-            try
-            {
+            foreach (User u in Current_Data.all_users)
+                sb.AppendFormat("{0}/", u.username);
 
-                string url = @"http://introtoapps.com/datastore.php?action=load&appid=214328958&objectid=users";
-                HttpClient client = new HttpClient();
-                var uri = new Uri(string.Format(url, string.Empty));
-                var response = await client.GetAsync(uri);
-                if (response.IsSuccessStatusCode)
-                {
-                    string content = await response.Content.ReadAsStringAsync();
-                    bool found = false;
-                    List<User> users = JsonConvert.DeserializeObject<List<User>>(content);
-                    foreach (User u in users)
-                    {
-                        if (u.test == Current_Data.Username)
-                            found = true;
-                    }
+            foreach (RootQuiz q in Current_Data.all_quizzes)
+                sb.AppendFormat("{0}/", q.id);
 
-                    if (found)
-                        await this.DisplayAlert("User", "User is here!", "OK");
-                    else
-                    {
-                        string url2 = string.Format("{0}{1}{2}","http://introtoapps.com/datastore.php?action=append&appid=214328958&objectid=users&data=%7B%22test%22%3a%22", Current_Data.Username, "%22%7D");
-                        var uri2 = new Uri(string.Format(url2, string.Empty));
-                        var response2 = await client.GetAsync(uri2);
-                        await this.DisplayAlert("User", "Test", "OK");
-                    }
-                }
-            }
-            catch(Exception e)
-            {
-                await this.DisplayAlert("Alert", e.ToString(), "OK");
-            }
+            string tester = sb.ToString();
 
+            await this.DisplayAlert("Test", tester, "OK");
             //await Navigation.PushAsync(new ProfilePage());
         }
 

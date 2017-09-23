@@ -15,9 +15,25 @@ namespace SIT313_Project_2_Quiz
 
         StackLayout layout_content, bottom_btns;
 
+        //Temporarily store the results for the user.
+        private List<Results> _user_results;
+
+        //Decoded strings.
+        private string _profile_username = null;
+
         public ProfilePage()
         {
             InitializeComponent();
+            _user_results = new List<Results>();
+
+            //Decode any necessary data only if there is a registered user.
+            if (!Current_Data.isGuest)
+            {
+                byte[] user_bytes = Convert.FromBase64String(Current_Data.Username);
+                _profile_username = Encoding.UTF8.GetString(user_bytes, 0, user_bytes.Length);
+            }
+            else
+                _profile_username = "Guest";
 
             //Build the base layout.
             BuildQuizPage();
@@ -29,7 +45,7 @@ namespace SIT313_Project_2_Quiz
             //The header label.
             Label header = new Label
             {
-                Text = "Welcome, (USERNAME)!",
+                Text = "Welcome, " + _profile_username + "!", //Set the Profile Label to the current Username.
                 TextColor = Color.FromHex("FFFFFF"), //Set text colour.
                 FontAttributes = FontAttributes.Bold, //Set text attributes.
                 FontSize = 25, //Set text font.
@@ -76,6 +92,9 @@ namespace SIT313_Project_2_Quiz
         public StackLayout BaseProfileLayout()
         {
 
+            //Get the final list if there are any results for that user.
+            ListView result_listview = new ListView(); //Define the new ListView
+
             //The base register form layout.
             StackLayout profile_form = new StackLayout
             {
@@ -83,8 +102,9 @@ namespace SIT313_Project_2_Quiz
 
                 Children =
                 {                
-                    //Get the final list
-                    ProfileResults(),
+                    //Set the final list.
+                    //result_listview
+                    ProfileResults() //For testing
                 }
             };
 
@@ -167,10 +187,7 @@ namespace SIT313_Project_2_Quiz
                 "30/08/2015 - 30 Questions (16/30 points)"
             };
 
-            /* Create a ListView filled with dummy records.
-             * The following code is referenced from the link below.
-             * URL: {https://developer.xamarin.com/api/type/Xamarin.Forms.ListView/}
-             */
+            // Create a ListView filled with the user's records.
             ListView list_layout = new ListView
             {
                 ItemsSource = records,
@@ -217,21 +234,24 @@ namespace SIT313_Project_2_Quiz
 
             };
 
-            list_layout.ItemSelected += OnItemTapped;
+            list_layout.ItemSelected += (s, e) =>
+            {
+                int index = 0;
+                int item_index = 0;
+                foreach (string str in records)
+                {
+                    if (e.SelectedItem.ToString() == str)
+                        item_index = index;
+
+                    index++;
+                }
+                ToPastResult(item_index);
+            };
 
 
             //Retrun final list.
             return list_layout;
 
-        }
-
-        /* This will handle the cell click events.
-         * The following code is referenced from teh link below.
-         * URL: {https://www.youtube.com/watch?v=cMRg0P2f9N4}
-         */
-        private void OnItemTapped(object sender, SelectedItemChangedEventArgs e)
-        {
-            ToPastResult();
         }
 
         // Gets the current orientation.
@@ -271,9 +291,13 @@ namespace SIT313_Project_2_Quiz
         async void ToQuiz()
         {
             //Display the 'Dialog Action Sheet' for displaying the different types of quizzes.
-            string action = await DisplayActionSheet("Select type:", "Cancel", null, "10 Questions", "20 Questions", "30 Questions");
+            string action = await DisplayActionSheet("Select type:", "Cancel", null, "Quiz 1", "Quiz 2");
             //Depending on which was selected, load the 'QuizPage'. For Project 1, it will all load the same type.
-            if (action.Contains("10 Questions") || action.Contains("20 Questions") || action.Contains("30 Questions"))
+            if (action.Contains("Quiz 1"))
+            {
+                await Navigation.PushAsync(new QuizPage());
+            }
+            else if (action.Contains("Quiz 2"))
             {
                 await Navigation.PushAsync(new QuizPage());
             }
@@ -286,9 +310,10 @@ namespace SIT313_Project_2_Quiz
         }
 
         //Transition to the 'PastResultPage'.
-        async void ToPastResult()
+        async void ToPastResult(int index)
         {
-            await Navigation.PushAsync(new PastResultPage());
+            await this.DisplayAlert("Index", string.Format("{0}", index), "OK");
+            //await Navigation.PushAsync(new PastResultPage());
         }
 
     }

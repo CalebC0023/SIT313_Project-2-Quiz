@@ -29,6 +29,10 @@
  *   URL: {https://www.youtube.com/watch?v=RCcWQCxVrus}
  *   URL: {https://www.youtube.com/watch?v=VF2UC86jjs0}
  *   URL: {https://stackoverflow.com/questions/38743280/deserialize-json-object-xamarin-android-c-sharp}
+ *   
+ * - Create ListView
+ *   URL: {https://developer.xamarin.com/api/type/Xamarin.Forms.ListView/}
+ *   URL: {https://www.youtube.com/watch?v=cMRg0P2f9N4}
  *
  * 
  * The references for Assignment 2 will be included within the code where they are first used.
@@ -39,6 +43,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Diagnostics;
 
 using Xamarin.Forms;
 using PCLCrypto;
@@ -51,11 +56,12 @@ namespace SIT313_Project_2_Quiz
         //Private class variables which allows dynamic changes to its properties
         private StackLayout layout_content;
         private StackLayout layout_btn_group;
-        
-        //Temporarily store the password for verification.
-        private string _password = null;
-        private string test2 = null;
 
+        //Temporarily store the username and password for verification.
+        private string _username = null;
+        private string _password = null;
+
+        //Define the SHA256 hasher for encrytion.
         IHashAlgorithmProvider pwHash = WinRTCrypto.HashAlgorithmProvider.OpenAlgorithm(HashAlgorithm.Sha256);
 
         public MainPage()
@@ -66,8 +72,6 @@ namespace SIT313_Project_2_Quiz
             BuildLoginPage();
         }
 
-        /* Building the initial layout for the main login page
-         */
 
         public void BuildLoginPage()
         {
@@ -177,27 +181,17 @@ namespace SIT313_Project_2_Quiz
                 MainEntry.TextChanged += (s, e) =>
                 {
 
-                    //Convert from bytes
-                    byte[] _username = Encoding.UTF8.GetBytes(e.NewTextValue);
+                    _username = e.NewTextValue;
 
-                    Current_Data.Username = Convert.ToBase64String(_username);
-
-                    //Convert back to string.
-                    //byte[] test = Convert.FromBase64String(test2);
-                    
-                    //Current_Data.Username = Encoding.UTF8.GetString(test, 0, test.Length);
                 };
             }
             else if (label == "Password")
             {
                 MainEntry.TextChanged += (s, e) =>
                 {
-                    //URL: {https://stackoverflow.com/questions/40557467/xamarin-pclcrypto-sha256-give-different-hash}
-                    StringBuilder sb = new StringBuilder();
-                    foreach (byte b in pwHash.HashData(Encoding.UTF8.GetBytes(e.NewTextValue)))
-                        sb.Append(b.ToString("X2"));
 
-                    _password = sb.ToString();
+                    _password = e.NewTextValue;
+
                 };
             }
 
@@ -301,50 +295,106 @@ namespace SIT313_Project_2_Quiz
             }
         }
 
-        /* End of dynamic layout */
-
-
-        /* Button Events
-         */
 
         //Transitions to the 'ProfilePage'.
         async void ToProfile()
         {
-            Current_Data.isGuest = false;
-            StringBuilder sb = new StringBuilder();
+            //Only transition if the 'user' list is valid.
+            if (Current_Data.user_list_status)
+            {
+                //Verify that the user has correctly entered their details. If not, display an alert.
+                //This checks the original input for each entry. Must not be 'null'.
+                if (_username == null || _username == "" || _password == null || _password == "")
+                    await this.DisplayAlert("Login Error", "Please ensure that both fields have been filled.", "OK");
+                else
+                {
 
-            foreach (User u in Current_Data.all_users)
-                sb.AppendFormat("{0}/", u.username);
+                    //Next, check whether the details match with any existing user.
 
-            foreach (RootQuiz q in Current_Data.all_quizzes)
-                sb.AppendFormat("{0}/", q.id);
+                    //Convert from bytes to string (the current format in the database).
+                    byte[] _user_bytes = Encoding.UTF8.GetBytes(_username);
+                    string username = Convert.ToBase64String(_user_bytes);
 
-            string tester = sb.ToString();
+                    /* Hash the UTF8 encoded password.
+                     * The following code is referenced from the URL below.
+                     * URL: {https://stackoverflow.com/questions/40557467/xamarin-pclcrypto-sha256-give-different-hash}
+                     */
 
-            await this.DisplayAlert("Test", tester, "OK");
-            //await Navigation.PushAsync(new ProfilePage());
+                    StringBuilder sb = new StringBuilder();
+                    foreach (byte b in pwHash.HashData(Encoding.UTF8.GetBytes(_password)))
+                        sb.Append(b.ToString("X2"));
+
+                    string password = sb.ToString();
+
+                    bool found = false; //Check whether the user is correctly found.
+
+                    //Go through each recorded user.
+                    if (Current_Data.all_users != null)
+                    {
+                        foreach (User u in Current_Data.all_users)
+                        {
+                            if (u.username == username && u.password == password)
+                                found = true;
+                        }
+                    }
+
+                    //If the details match, transition.
+                    if (found)
+                    {
+
+                        Current_Data.Username = username; //Store the current 'username'.
+                        Current_Data.isGuest = false; //Set current user as 'User' (false in this case).
+                        await Navigation.PushAsync(new ProfilePage());
+                    }
+                    //Else, display the appropriate error message.
+                    else
+                        await this.DisplayAlert("Login Error", "The details entered was invalid. Please try again.", "OK");
+
+                }
+
+            }
+            else
+                await this.DisplayAlert("User List Error", "There was an error with retrieving the 'User' list. Please try restarting the app.", "OK");
         }
 
         //Transitions to the 'ProfilePage' as a 'Guest'.
         async void ToGuestProfile()
         {
-            Current_Data.isGuest = true;
+            Current_Data.isGuest = true; //Set current user as 'Guest' (true in this case).
             await Navigation.PushAsync(new ProfilePage());
         }
 
         //Transitions to the 'RegisterPage'.
         async void ToRegister()
         {
-            await Navigation.PushAsync(new RegisterPage());
+            //Only transition if the 'user' list is valid.
+            if (Current_Data.user_list_status)
+                await Navigation.PushAsync(new RegisterPage());
+            else
+                await this.DisplayAlert("User List Error", "There was an error with retrieving the 'User' list. Please try restarting the app.", "OK");
         }
 
         //Transitions to the 'GetPWPage'.
         async void ToGetPassword()
         {
-            await Navigation.PushAsync(new GetPWPage());
+            //Only transition if the 'user' list is valid.
+            if (Current_Data.user_list_status)
+                await Navigation.PushAsync(new GetPWPage());
+            else
+                await this.DisplayAlert("User List Error", "There was an error with retrieving the 'User' list. Please try restarting the app.", "OK");
         }
 
-        /* End of Button Events */
+        /* Stop the 'back' event when on specific pages.
+         * The following method is referenced from the URL below.
+         * URL: {https://stackoverflow.com/questions/30657344/how-to-handle-cancel-back-navigation-in-xamarin-forms}
+         */
+        protected override bool OnBackButtonPressed()
+        {
+            //Returning true prevents the page from transitioning back to the last page.
+            //(In this case, in the login screen, it'll prevent the app from closing/sleeping. There should already be specific button for it)
+            return true;
+        }
+
 
     }
 

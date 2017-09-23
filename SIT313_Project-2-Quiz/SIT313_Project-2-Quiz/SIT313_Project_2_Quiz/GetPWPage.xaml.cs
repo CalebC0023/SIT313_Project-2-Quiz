@@ -12,6 +12,10 @@ namespace SIT313_Project_2_Quiz
     [XamlCompilation(XamlCompilationOptions.Compile)]
     public partial class GetPWPage : ContentPage
     {
+
+        //Stores the entered value.
+        private string _username = null;
+
         public GetPWPage()
         {
             InitializeComponent();
@@ -40,6 +44,11 @@ namespace SIT313_Project_2_Quiz
             {
                 Placeholder = "Enter Username",
                 HorizontalOptions = LayoutOptions.FillAndExpand,
+            };
+
+            entry.TextChanged += (s, e) =>
+            {
+                _username = e.NewTextValue;
             };
 
             //The content StackLayout.
@@ -117,19 +126,79 @@ namespace SIT313_Project_2_Quiz
          */
         async void ConfirmReset()
         {
-            //Get the answer for the alert.
-            bool answer = await DisplayAlert("Confirmation", "Are you sure you want to reset Password?", "Yes", "No");
-            //If the user 'accepts', run another action (e.g. transition to new page).
-            if (answer)
+
+            if (_username == null || _username == "")
+                await this.DisplayAlert("Entry Error", "Please ensure that the Username has been filled.", "OK");
+            else
             {
-                ToResetSecurityPage();
+
+                //Next, check whether the details match with any existing user.
+
+                //Convert from bytes to string (the current format in the database).
+                byte[] _user_bytes = Encoding.UTF8.GetBytes(_username);
+                string username = Convert.ToBase64String(_user_bytes);
+
+                //Store user details for editting.
+                string secure_question = null;
+                string secure_answer = null;
+
+                bool found = false; //Check whether the user is correctly found.
+
+                //Go through each recorded user.
+                if (Current_Data.all_users != null)
+                {
+                    foreach (User u in Current_Data.all_users)
+                    {
+                        if (u.username == username)
+                        {
+                            found = true;
+                            secure_question = u.security_question;
+                            secure_answer = u.security_answer;
+                        }
+                    }
+                }
+
+                //If the details match, transition.
+                if (found)
+                {
+
+                    //Get the confirmation to continue.
+                    bool answer = await DisplayAlert("Confirmation", "Are you sure you want to reset Password?", "Yes", "No");
+                    //If the user 'accepts', store data and transition.
+                    if (answer)
+                    {
+                        Current_Data.edit_username = username;
+                        Current_Data.edit_secure_question = secure_question;
+                        Current_Data.edit_secure_answer = secure_answer;
+                        ToResetSecurityPage();
+                    }
+
+                }
+                //Else, display the appropriate error message.
+                else
+                    await this.DisplayAlert("User Error", "The details entered was invalid. Please try again.", "OK");
+
             }
+
         }
 
         //Transitions to the 'ResetSecurityPage'.
         async void ToResetSecurityPage()
         {
             await Navigation.PushAsync(new ResetSecurityPage());
+        }
+
+        //Override the 'back' button event.
+        protected override bool OnBackButtonPressed()
+        {
+            CustomBackBtnEvent();
+            return true;
+        }
+
+        //The custom event for the back button.
+        async void CustomBackBtnEvent()
+        {
+            await Navigation.PushAsync(new MainPage());
         }
 
     }

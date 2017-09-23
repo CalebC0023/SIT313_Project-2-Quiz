@@ -38,8 +38,16 @@ namespace SIT313_Project_2_Quiz
         /* Data used to handle miscellaneous tasks (e.g. display the current user in the profile page, save data for registered users but not guest, etc.)
          */
 
-        //Temporarily store the user's details.
+        //Temporarily store the user's username.
         public static string Username;
+
+        //Temporarily store the user's details which is being edited.
+        public static string edit_username;
+        public static string edit_secure_question;
+        public static string edit_secure_answer;
+
+        //Temporarily store the user selected result for viewing.
+        public static Results selected_Results;
 
         //Check whether the user has an account or is a 'Guest'.
         public static bool isGuest;

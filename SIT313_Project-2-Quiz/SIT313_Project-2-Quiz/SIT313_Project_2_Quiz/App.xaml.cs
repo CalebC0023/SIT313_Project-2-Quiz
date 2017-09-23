@@ -302,7 +302,7 @@ namespace SIT313_Project_2_Quiz
             {
                 //If there are any errors (e.g. wrong format, HTTP requests failed, etc.), set the 'Quiz' list status to 'false'
                 //and display the error, which will stop access to quizzes until the problem is solved.
-                Current_Data.user_list_status = false;
+                Current_Data.quiz_list_status = false;
                 Debug.WriteLine("'Quizzes' file error: " + e.Message.ToString());
             }
 

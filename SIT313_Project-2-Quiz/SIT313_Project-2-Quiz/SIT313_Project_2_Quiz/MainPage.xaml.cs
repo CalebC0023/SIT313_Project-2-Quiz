@@ -15,6 +15,7 @@
  * - Create click events on labels.
  *   URL: {https://developer.xamarin.com/guides/xamarin-forms/application-fundamentals/gestures/tap/}
  *   URL: {https://stackoverflow.com/questions/35811060/how-to-create-click-event-on-label-in-xamarin-forms-dynamically}
+ *   URL: {https://forums.xamarin.com/discussion/64248/why-im-getting-the-error-cannot-convert-from-method-group-to-action}
  *   
  * - Hex color codes.
  *   URL: {http://htmlcolorcodes.com/}
@@ -33,6 +34,9 @@
  * - Create ListView
  *   URL: {https://developer.xamarin.com/api/type/Xamarin.Forms.ListView/}
  *   URL: {https://www.youtube.com/watch?v=cMRg0P2f9N4}
+ *   
+ * - Create alerts
+ *   URL: {https://developer.xamarin.com/guides/xamarin-forms/application-fundamentals/navigation/pop-ups/}
  *
  * 
  * The references for Assignment 2 will be included within the code where they are first used.
@@ -357,7 +361,7 @@ namespace SIT313_Project_2_Quiz
                 await this.DisplayAlert("User List Error", "There was an error with retrieving the 'User' list. Please try restarting the app.", "OK");
         }
 
-        //Transitions to the 'ProfilePage' as a 'Guest'.
+        //Transitions to the 'ProfilePage' as a 'Guest'. The status of the user list does not matter for Guests (no persistent data).
         async void ToGuestProfile()
         {
             Current_Data.isGuest = true; //Set current user as 'Guest' (true in this case).

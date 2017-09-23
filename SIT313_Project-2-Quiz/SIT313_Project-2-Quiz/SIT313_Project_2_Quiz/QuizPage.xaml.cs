@@ -3,13 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Diagnostics;
 
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
-
-// Added library for serialising/deserialising JSON files.
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using PCLStorage;
 
 namespace SIT313_Project_2_Quiz
 {
@@ -17,11 +15,16 @@ namespace SIT313_Project_2_Quiz
     public partial class QuizPage : ContentPage
     {
 
-        List<RootQuiz> quizzes; //Holds the deserialised json file.
-        List<Question> questions; //Holds the questions for the selected quiz.
-
         //For dynamic layouts
         StackLayout bottom_btns, layout_content;
+
+        List<Question> _questions; //Store the list of questions in that particular quiz.
+        string[] saved_answers; //Stores the saved answers.
+        string[] user_answers; //Store the current unsaved answers.
+
+        //The quiz's properties
+        string quiz_id;
+        string quiz_name;
 
         //For displaying 'save' icons
         List<Button> save_btns; //All the 'save' buttons for each question.
@@ -32,109 +35,25 @@ namespace SIT313_Project_2_Quiz
         {
             InitializeComponent();
 
-            BuildJSONFile(); //Load the Quiz Object from the JSON file.
+            //Initialize any List.
+            _questions = new List<Question>();
+
+            //Set the default values
+            quiz_id = Current_Data.selected_Quiz.id;
+            quiz_name = Current_Data.selected_Quiz.title;
+            _questions = Current_Data.selected_Quiz.questions;
+
+            //Initialize these list with a set size (equal to the number of questions in this quiz).
+            saved_answers = new string[_questions.Count];
+            user_answers = new string[_questions.Count];
+
+            ExtractOngoingQuiz(); //Try extracting the previous quiz, if any.
             BuildQuizPage(); //Build the base layout.
-        }
-
-        public void BuildJSONFile()
-        {
-
-            /* The following lines of code are of the JSON file containing some sample question types.
-             * The code has been minorly tweaked due to some issues with Xamarin which had cause it to crash.
-             * Changes:
-             * - The 'answer' property had two different variable types (e.g. List<string>, string).
-             *   Therefore, it has been changed to only one type (List<string>).
-             */
-            string json =
-                @"[{
-
-                    ""id"": ""quiz01"",
-                    ""title"": ""All Types"",
-                    ""questions"": [
-                    {
-                        ""id"": 1,
-                        ""text"": ""Date"",
-                        ""type"": ""date"",
-                        ""help"": ""The date you started this quiz.""
-                    },
-                    {
-                        ""id"": 2,
-                        ""text"": ""Name"",
-                        ""type"": ""textbox"",
-                        ""help"": ""Your full name""
-                    },
-                    {
-                        ""id"": 3,
-                        ""text"": ""Diary"",
-                        ""type"": ""textarea"",
-                        ""help"": ""Write 4 paragraphs""
-                    },
-                    {
-                        ""id"": 4,
-                        ""text"": ""Gender"",
-                        ""type"": ""choice"",
-                        ""options"": [ ""Male"", ""Female"", ""Depends what day it is"" ]
-                    }
-                    ]
-
-                },
-                {
-
-                    ""id"": ""quiz02"",
-                    ""title"": ""Exam Grade"",
-                    ""questionsPerPage"": [ 2, 4 ],
-                    ""score"": 20,
-                    ""questions"": [
-                    {
-                        ""id"": 1,
-                        ""text"": ""Sid"",
-                        ""type"": ""textbox"",
-                        ""validate"": "" /[0 - 9] +/ ""
-                    },
-                    {
-                        ""id"": 2,
-                        ""text"": ""Name"",
-                        ""type"": ""textbox"",
-                        ""help"": ""Your full name""
-                    },
-                    {
-                        ""id"": 3,
-                        ""text"": ""What is the capital of Australia?"",
-                        ""type"": ""textbox"",
-                        ""answer"": [ ""Canberra"" ],
-                        ""weighting"": 5
-                    },
-                    {
-                        ""id"": 4,
-                        ""text"": ""What is the largest state in Australia?"",
-                        ""type"": ""textbox"",
-                        ""answer"": [ ""Western Australia"", ""WA"" ],
-                        ""weighting"": 5
-                    },
-                    {
-                        ""id"": 5,
-                        ""text"": ""What is the capital of Victoria?"",
-                        ""type"": ""choice"",
-                        ""options"": [ ""Sydney"", ""Brisbane"", ""Melbourne"" ],
-                        ""answer"": [ ""Melbourne"" ],
-                        ""weighting"": 5
-                    }
-                    ]
-
-                }]";
-
-            quizzes = JsonConvert.DeserializeObject<List<RootQuiz>>(json);
-
         }
 
         //Build the base layout.
         public void BuildQuizPage()
         {
-
-            //The quiz's properties
-            string quiz_id = quizzes[0].id;
-            string quiz_name = quizzes[0].title;
-            questions = quizzes[0].questions;
 
             //The header label.
             Label header = new Label
@@ -208,7 +127,7 @@ namespace SIT313_Project_2_Quiz
 
             CarouselView body_content = new CarouselView
             {
-                ItemsSource = questions,
+                ItemsSource = _questions,
 
                 //Go through each 'Question' object in the ItemsSource.
                 ItemTemplate = new DataTemplate(() =>
@@ -231,36 +150,39 @@ namespace SIT313_Project_2_Quiz
                     //Set the question
                     Label _question = new Label()
                     {
-                        Text = questions[count].text,
+                        Text = _questions[count].text,
                         HorizontalOptions = LayoutOptions.Center,
                         FontAttributes = FontAttributes.Bold,
                         FontSize = 20
                     };
 
-                    //Checks through each question for their type.
-                    foreach (Question q in questions)
-                    {
-                        if (q.text.Equals(_question.Text))
-                        {
-                            type = q.type;
-                            if (type.Equals("choice"))
-                            {
-                                options = q.options;
-                            }
-                        }
-                    };
+                    //Get the type of question.
+                    type = _questions[count].type;
+
+                    //Get the options for 'choice' type questions.
+                    if (type == "choice")
+                        options = _questions[count].options;
 
                     //Add the answer field for that question.
-                    StackLayout _answer = QuizAnswerField(options, type);
+                    StackLayout _answer = QuizAnswerField(options, type, count);
 
                     //Add the 'Save' button for saving answers
                     Button _save = QuizButtons("Save");
                     _save.VerticalOptions = LayoutOptions.End;
 
-                    count++; //Add the counter
                     //Save the buttons and imageboxes
                     question_imgs.Add(_image);
                     save_btns.Add(_save);
+
+                    //Set all the questions in 'saved state' (Set the 'save' image if resuming from an unfinished quiz).
+                    if (Current_Data.ongoingQuiz)
+                    {
+                        //Set the 'save' image.
+                        question_imgs[count].Aspect = Aspect.AspectFit; //Ensure the image 'fits' without resizing itself
+                        question_imgs[count].Source = ImageSource.FromFile("save.png"); //Load the image from the local sources.
+                    }
+
+                    count++; //Add the counter
 
                     //Combine the other objects and set this layout as a 'page' in the CarouselView.
                     return new StackLayout
@@ -284,7 +206,7 @@ namespace SIT313_Project_2_Quiz
         }
 
         //Base layout of answer fields.
-        public StackLayout QuizAnswerField(List<string> _option, string _type)
+        public StackLayout QuizAnswerField(List<string> _option, string _type, int _index)
         {
 
             //Empty StackLaout used for holding the correct field type.
@@ -298,28 +220,28 @@ namespace SIT313_Project_2_Quiz
             //Set an Entry for 'text' answers.
             if (_type.Equals("textbox"))
             {
-                _field.Children.Add(
-                        new Entry
-                        {
-                            //Expand the answer field as far as possible
-                            VerticalOptions = LayoutOptions.CenterAndExpand,
-                            HorizontalOptions = LayoutOptions.FillAndExpand
-                        }
-                    );
-            }
-            //Set and Editor for 'textarea' answers.
-            //URL: {https://developer.xamarin.com/api/type/Xamarin.Forms.Editor/}
-            else if (_type.Equals("textarea"))
-            {
-                _field.Children.Add(
-                        new Editor
-                        {
-                            HeightRequest = 110, //Set an appropriate height.
-                            //Expand the answer field as far as possible
-                            VerticalOptions = LayoutOptions.CenterAndExpand,
-                            HorizontalOptions = LayoutOptions.FillAndExpand
-                        }
-                    );
+
+                //The base Entry.
+                Entry textbox = new Entry
+                {
+                    //Expand the answer field as far as possible
+                    VerticalOptions = LayoutOptions.CenterAndExpand,
+                    HorizontalOptions = LayoutOptions.FillAndExpand
+                };
+
+                textbox.TextChanged += (s, e) =>
+                {
+                    user_answers[_index] = e.NewTextValue;
+                };
+
+                //Reenter the previously saved answer.
+                if (Current_Data.ongoingQuiz)
+                {
+                    //Set the given answer.
+                    textbox.Text = saved_answers[_index];
+                };
+
+                _field.Children.Add(textbox);
             }
             //Set a Picker for single 'choice' answers.
             else if (_type.Equals("choice"))
@@ -332,28 +254,50 @@ namespace SIT313_Project_2_Quiz
                     HorizontalOptions = LayoutOptions.FillAndExpand
                 };
 
+                //Add the placeholder text
+                _choice.Items.Add("- Select an answer -");
+
                 //Add each option to the picker
                 foreach (string option in _option)
                 {
                     _choice.Items.Add(option);
                 };
 
+                _choice.SelectedIndex = 0; //Set the default index.
+                user_answers[_index] = ""; //Set the default value.
+
+                _choice.SelectedIndexChanged += (s, e) =>
+                {
+                    if (_choice.SelectedIndex == 0)
+                        user_answers[_index] = ""; //The first option is always null (placeholder).
+                    else
+                        user_answers[_index] = _option[_choice.SelectedIndex - 1]; //Set the answer ('-1' is to 'remove' the first placeholder option from the list)
+                };
+
+                //Reenter the previously saved answer.
+                if (Current_Data.ongoingQuiz)
+                {
+
+                    int answer_index = 1; //The default value of the answer.
+                    //Next, check where that option is in the Picker. If it's 'null' then the answer hasn't been picked.
+                    if (saved_answers[_index] == "" || saved_answers[_index] == null)
+                        _choice.SelectedIndex = 0;
+                    else
+                    {
+                        //Check through each answer.
+                        foreach (string qtn in _option)
+                        {
+                            if (saved_answers[_index] == qtn)
+                                _choice.SelectedIndex = answer_index;
+
+                            answer_index++;
+                        }
+                    }
+
+                };
+
                 //Finally, add the picker
                 _field.Children.Add(_choice);
-            }
-            //Set a DatePicker for 'date' answers.
-            //URL: {https://developer.xamarin.com/api/type/Xamarin.Forms.DatePicker/}
-            else if (_type.Equals("date"))
-            {
-                _field.Children.Add(
-                        new DatePicker
-                        {
-                            Format = "D", //The format which the date is displayed.
-                            //Expand the answer field as far as possible
-                            VerticalOptions = LayoutOptions.CenterAndExpand,
-                            HorizontalOptions = LayoutOptions.FillAndExpand
-                        }
-                    );
             }
 
             //Return this Stacklayout after applying the changes
@@ -410,12 +354,47 @@ namespace SIT313_Project_2_Quiz
             else if (label.Equals("Save"))
             {
                 btn.StyleId = count.ToString(); //Set correct ID for the button.
-                //The following code is referenced from the link below.
-                //URL: {https://forums.xamarin.com/discussion/64248/why-im-getting-the-error-cannot-convert-from-method-group-to-action}
                 btn.Command = new Command(() => { SaveAnswer(btn.StyleId); });
             }
 
             return btn; //Return this button.
+
+        }
+
+        //Try to extract the ongoing quiz.
+        public void ExtractOngoingQuiz()
+        {
+
+            //Check whether it's an ongoing quiz.
+            if (Current_Data.ongoingQuiz)
+            {
+                
+                int current_index = 0;
+                //Go through each question.
+                foreach (string s in Current_Data.ongoing_Quiz.quiz_answers)
+                {
+                    
+                    string current_line = s;
+                    //If the recorded answer was 'null', set it as so.
+                    if (s == "" || s == null)
+                    {
+                        user_answers[current_index] = "";
+                        saved_answers[current_index] = "";
+                    }
+                    else
+                    {
+                        //Decode the answers.
+                        byte[] encode_ans_bytes = Convert.FromBase64String(s);
+                        string decode_ans = Encoding.UTF8.GetString(encode_ans_bytes, 0, encode_ans_bytes.Length);
+
+                        //Then, record it.
+                        user_answers[current_index] = decode_ans;
+                        saved_answers[current_index] = decode_ans;
+                    }
+                    
+                    current_index++;
+                }
+            }
 
         }
 
@@ -452,13 +431,143 @@ namespace SIT313_Project_2_Quiz
         //Transition to the 'ProfilePage'.
         async void ToProfile()
         {
+            SaveQuiz(); //Save the current state of the Quiz.
+            await this.DisplayAlert("Saved Quiz", "The quiz has been saved, you may resume whenever.", "OK");
             await Navigation.PushAsync(new ProfilePage());
         }
 
         //Transition to the 'ReviewPage'.
         async void ToReview()
         {
+            SaveQuiz(); //Save the current state of the Quiz.
+            await this.DisplayAlert("Saved Quiz", "The quiz has been saved, you may resume whenever.", "OK");
             await Navigation.PushAsync(new ReviewPage());
+        }
+
+        async void SaveQuiz()
+        {
+
+            try
+            {
+
+                //Only registered users can resume the quizzes.
+                if (!Current_Data.isGuest)
+                {
+
+                    //First, save all the answers.
+                    int _index = 0;
+                    foreach (string s in user_answers)
+                    {
+                        if (s == null || s == "")
+                            saved_answers[_index] = "";
+                        else
+                            saved_answers[_index] = s;
+
+                        _index++;
+                    }
+
+                    //Next, build the correct .json string using the recorded data for the file.
+                    string content = "";
+
+                    //Store the current user.
+                    content += "[{\"user\":\"";
+                    content += Current_Data.Username;
+
+                    //Store the current quiz id.
+                    content += "\",\"quiz_id\":\"";
+                    content += Current_Data.selected_Quiz.id;
+
+                    //Store the current saved answers.
+                    content += "\",\"quiz_answers\":[";
+                    bool first_answer = true; //Used for correctly building the .json string.
+                    foreach (string answer in saved_answers)
+                    {
+
+                        string input1 = "";
+                        //Properly define the input for the file
+                        if (answer == null || answer == "")
+                            input1 = "";
+                        else
+                        {
+                            //Encode the answers.
+                            byte[] answer_bytes = Encoding.UTF8.GetBytes(answer);
+                            string _answer = Convert.ToBase64String(answer_bytes);
+                            input1 = _answer;
+                        }
+
+                        //Change the format for the last answer.
+                        if (first_answer)
+                        {
+                            first_answer = false;
+                            content += "\"";
+                            content += input1;
+                            content += "\"";
+                        }
+                        else
+                        {
+                            content += ",\"";
+                            content += input1;
+                            content += "\"";
+                        }
+
+                    }
+
+                    //Store the results of each answer (for properly saving to the file).
+                    content += "],\"quiz_results\":[";
+                    bool first_result = true; //Used for correctly building the .json string.
+                    for (int x = 0; x < saved_answers.Count(); x++)
+                    {
+
+                        //This field is mainly for correct formatting of the file. Therefore, it can all be false
+                        string input2 = "0";
+
+                        //Change the format for the last answer.
+                        if (first_result)
+                        {
+                            first_result = false;
+                            content += input2;
+                        }
+                        else
+                        {
+                            content += ",";
+                            content += input2;
+                        }
+
+                    }
+
+                    //Store the total score.
+                    //(For properly saving to the file, therefore the proper score is not necesarry).
+                    content += "],\"quiz_total_score\":0";
+
+                    //Store the user score.
+                    //(For properly saving to the file, therefore the proper score is not necesarry).
+                    content += ",\"quiz_user_score\":0}]";
+
+                    //Get the folder and file name
+                    string folder_name = string.Format("{0}{1}", Current_Data.Username, "ongoing_files"); //The folder name for the specific user's saved ongoing quizzes.
+                    string filename = string.Format("{0}{1}", Current_Data.Username, "_ongoingQuiz.txt"); //This will create/overwrite the specific user's local file.
+
+                    //First, create/overwrite the folder
+                    IFolder create_folder = await Current_Data.root_folder.CreateFolderAsync(folder_name, CreationCollisionOption.ReplaceExisting);
+
+                    //Then, create (or overwrite) the .txt file to store the data.
+                    IFile create_file = await create_folder.CreateFileAsync(filename, CreationCollisionOption.ReplaceExisting);
+
+                    //Finally, try updating the file.
+                    await create_file.WriteAllTextAsync(content);
+                    Current_Data.ongoingQuiz = true; //After saving, the current state of the quiz is 'ongoing'.
+
+                }
+                else
+                    await this.DisplayAlert("Save Quiz", "Only registered users may resume an unfinished quiz. Please register to use this function.", "OK");
+
+            }
+            catch (Exception e)
+            {
+                Current_Data.ongoingQuiz = false;
+                Debug.WriteLine("Saving File Error:" + e.Message.ToString());
+            }
+
         }
 
         //For Project 1, just display a notification and 'save' icon.
@@ -472,12 +581,26 @@ namespace SIT313_Project_2_Quiz
                 //One the button is found, display 'save' icon for that question.
                 if (save_btns[x].StyleId.Equals(id))
                 {
-                    //The following code is referenced from the link below.
-                    //URL: {https://developer.xamarin.com/guides/xamarin-forms/user-interface/images/#Local_Images}
+
+                    //Save the answer for that question.
+                    if (user_answers[x] == null || user_answers[x] == "")
+                        saved_answers[x] = "";
+                    else
+                        saved_answers[x] = user_answers[x];
+
+
+                    //Set the 'save' image.
                     question_imgs[x].Aspect = Aspect.AspectFit; //Ensure the image 'fits' without resizing itself
                     question_imgs[x].Source = ImageSource.FromFile("save.png"); //Load the image from the local sources.
                 };
             };
+        }
+
+        //Override the 'back' button event.
+        protected override bool OnBackButtonPressed()
+        {
+            ToProfile();
+            return true;
         }
 
     }

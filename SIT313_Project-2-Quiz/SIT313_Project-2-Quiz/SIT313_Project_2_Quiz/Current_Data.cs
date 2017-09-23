@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using PCLStorage;
+
 namespace SIT313_Project_2_Quiz
 {
 
@@ -49,8 +51,20 @@ namespace SIT313_Project_2_Quiz
         //Temporarily store the user selected result for viewing.
         public static Results selected_Results;
 
+        //Temporarily store the saved state of the ongoing quiz.
+        public static Results ongoing_Quiz;
+
+        //Temporarily store the current quiz being solved.
+        public static RootQuiz selected_Quiz;
+
+        //Check whether a quiz is currently ongoing
+        public static bool ongoingQuiz = false;
+
         //Check whether the user has an account or is a 'Guest'.
-        public static bool isGuest;
+        public static bool isGuest = false;
+
+        //The base 'root_folder' during operations.
+        public static IFolder root_folder = FileSystem.Current.LocalStorage;
 
         /* */
 

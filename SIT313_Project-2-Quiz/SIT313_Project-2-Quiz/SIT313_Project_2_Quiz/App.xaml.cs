@@ -260,12 +260,12 @@ namespace SIT313_Project_2_Quiz
 
 
             /* The following 'try and catch' statement below can be tested with the following steps.
-             * 1. First, comment out the 'try and catch' statement above to test an 'empty' local storage.
-             * 2. Next, run code normally to save the local file from the online storage.
-             * 3. Finally, repeat Step 1, which will now allow the user to answer a 'quiz' now since the 'quizzes' are present,
+             * 1. First, comment out the 'try and catch' statement above and set 'server_access' to False, to test an 'empty' local storage.
+             *    When you try to start a quiz (or look at a past result), you'll get an alert in the app.
+             * 2. Next, run code normally (delete comment lines and change 'server_status' back to true) to save the local file from the online storage.
+             * 3. Finally, repeat Step 1, which will now allow the user to star a quiz (or view results) now since the 'quizzes' are present,
              *    regardless of the state of the server.
              */
-
 
             //If the 'quizzes' file cannot be accessed online, check the local storage.
             try

@@ -3,9 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Diagnostics;
 
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
+using PCLStorage;
+using Newtonsoft.Json;
 
 namespace SIT313_Project_2_Quiz
 {
@@ -34,6 +37,9 @@ namespace SIT313_Project_2_Quiz
             }
             else
                 _profile_username = "Guest";
+
+            //Get user's details (including any ongoing quiz).
+            GetCurrentUserDetails();
 
             //Build the base layout.
             BuildQuizPage();
@@ -234,10 +240,12 @@ namespace SIT313_Project_2_Quiz
 
             };
 
+            //Check which item is currently selected.
             list_layout.ItemSelected += (s, e) =>
             {
-                int index = 0;
-                int item_index = 0;
+                int index = 0; //The current index in the list.
+                int item_index = 0; //The index of the selected item.
+                //Go through
                 foreach (string str in records)
                 {
                     if (e.SelectedItem.ToString() == str)
@@ -284,36 +292,155 @@ namespace SIT313_Project_2_Quiz
             }
         }
 
-        /* Transtion to 'QuizPage' after selecting the type of quiz.
-         * The following function is referenced from the link below.
-         * URL: {https://developer.xamarin.com/guides/xamarin-forms/application-fundamentals/navigation/pop-ups/}
-         */
+        //Try to open and find the user's current quiz.
+        async void GetCurrentUserDetails()
+        {
+
+            //Only registered users can resume unfinished quizzes.
+            if (!Current_Data.isGuest)
+            {
+
+                try
+                {
+
+                    //Get the folder and file name
+                    string folder_name = string.Format("{0}{1}", Current_Data.Username, "ongoing_files"); //The folder name for the specific user's saved ongoing quizzes.
+                    string filename = string.Format("{0}{1}", Current_Data.Username, "_ongoingQuiz.txt"); //This will create/overwrite the specific user's local file.
+
+                    //First, get the folder.
+                    IFolder read_folder = await Current_Data.root_folder.GetFolderAsync(folder_name);
+
+                    //Check whether the file exists.
+                    ExistenceCheckResult file_exist = await read_folder.CheckExistsAsync(filename);
+
+                    string content = null;
+                    //Read from the file if it exists.
+                    if (file_exist == ExistenceCheckResult.FileExists)
+                    {
+                        //Once the file is found, get the .json string from it.
+                        IFile read_file = await read_folder.GetFileAsync(filename);
+                        content = await read_file.ReadAllTextAsync();
+
+                        //Then, deserialize it.
+                        List<Results> base_ongoing_quiz = new List<Results>();
+                        base_ongoing_quiz = JsonConvert.DeserializeObject<List<Results>>(content);
+
+                        //Lastly, extract the data. (Should only be 1 'object')
+                        foreach (Results q in base_ongoing_quiz)
+                        {
+                            Current_Data.ongoing_Quiz = q;
+
+                            //Next, get the current quiz.
+                            foreach (RootQuiz quiz in Current_Data.all_quizzes)
+                            {
+                                if (Current_Data.ongoing_Quiz.quiz_id == quiz.id)
+                                    Current_Data.selected_Quiz = quiz;
+                            }
+                        }
+
+                    }
+                    //If not, throw an exception.
+                    else
+                        throw new Exception("The user's file in the 'ongoing_files' folder cannot be found");
+
+                    Current_Data.ongoingQuiz = true;
+
+                }
+                catch (Exception e)
+                {
+                    Current_Data.ongoingQuiz = false;
+                    Debug.WriteLine("Extract File Error:" + e.Message.ToString());
+                }
+
+            }
+
+        }
+
+        // Transtion to 'QuizPage' after selecting the type of quiz.
         async void ToQuiz()
         {
-            //Display the 'Dialog Action Sheet' for displaying the different types of quizzes.
-            string action = await DisplayActionSheet("Select type:", "Cancel", null, "Quiz 1", "Quiz 2");
-            //Depending on which was selected, load the 'QuizPage'. For Project 1, it will all load the same type.
-            if (action.Contains("Quiz 1"))
+
+            //The user may only start a quiz if the 'quizzes' list is valid.
+            if (Current_Data.quiz_list_status)
             {
-                await Navigation.PushAsync(new QuizPage());
+
+                bool confirm_new_quiz = true;
+
+                if (Current_Data.ongoingQuiz)
+                {
+                    confirm_new_quiz = false;
+                    string new_quiz = await DisplayActionSheet("There is an ongoing quiz. Start a new quiz anyway?", "Cancel", null, "Yes");
+                    if (new_quiz.Contains("Yes"))
+                        confirm_new_quiz = true;
+                }
+
+                //If the user chooses to start a new quiz regardless, continue.
+                if (confirm_new_quiz)
+                {
+                    //Display the 'Dialog Action Sheet' for displaying the different types of quizzes.
+                    string quiz_selection = await DisplayActionSheet("Select type:", "Cancel", null, "Quiz 1", "Quiz 2");
+                    //Depending on which was selected, load the 'QuizPage'. For Project 2, there will be two 'set' quizzes available.
+                    if (quiz_selection.Contains("Quiz 1"))
+                        Current_Data.selected_Quiz = Current_Data.all_quizzes[0]; //Get the first quiz in the list
+                    else if (quiz_selection.Contains("Quiz 2"))
+                        Current_Data.selected_Quiz = Current_Data.all_quizzes[1]; //Get the second quiz in the list
+
+                    Current_Data.ongoingQuiz = false;
+
+                    await Navigation.PushAsync(new QuizPage());
+                }
+
             }
-            else if (action.Contains("Quiz 2"))
-            {
-                await Navigation.PushAsync(new QuizPage());
-            }
+            else
+                await this.DisplayAlert("Quiz Alert", "There was an error with retrieving the 'Quiz' list. Please try restarting the app.", "OK");
+
         }
 
         //Transition to the 'QuizPage'.
         async void ToResumeQuiz()
         {
-            await Navigation.PushAsync(new QuizPage());
+
+            //The user may only start a quiz if the 'quizzes' list is valid.
+            if (Current_Data.quiz_list_status)
+            {
+                //Transition only if there is an ongoing quiz.
+                if (Current_Data.ongoingQuiz)
+                    await Navigation.PushAsync(new QuizPage());
+            }
+            else
+                await this.DisplayAlert("Quiz Alert", "There was an error with retrieving the 'Quiz' list. Please try restarting the app.", "OK");
+
         }
 
         //Transition to the 'PastResultPage'.
         async void ToPastResult(int index)
         {
-            await this.DisplayAlert("Index", string.Format("{0}", index), "OK");
-            //await Navigation.PushAsync(new PastResultPage());
+            //The user may only view the past results if all the file list are valid.
+            //(The 'user' list status was already checked beforehand)
+            if (Current_Data.quiz_list_status && Current_Data.result_list_status)
+            {
+
+                //Store the selected result for viewing.
+
+
+                await Navigation.PushAsync(new PastResultPage());
+            }
+            else
+                await this.DisplayAlert("Quiz Alert", "There was an error with retrieving some of the lists. Please try restarting the app.", "OK");
+
+        }
+
+        //Override the 'back' button event.
+        protected override bool OnBackButtonPressed()
+        {
+            CustomBackBtnEvent();
+            return true;
+        }
+
+        //The custom event for the back button.
+        async void CustomBackBtnEvent()
+        {
+            await Navigation.PushAsync(new MainPage());
         }
 
     }

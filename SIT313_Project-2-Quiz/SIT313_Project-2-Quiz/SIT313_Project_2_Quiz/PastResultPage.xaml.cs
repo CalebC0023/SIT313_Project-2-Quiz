@@ -12,9 +12,18 @@ namespace SIT313_Project_2_Quiz
     [XamlCompilation(XamlCompilationOptions.Compile)]
     public partial class PastResultPage : ContentPage
     {
+
+        List<Question> _questions; //Store the list of questions in that particular quiz.
+
         public PastResultPage()
         {
             InitializeComponent();
+
+            //Initialize any List.
+            _questions = new List<Question>();
+
+            //Get the necessary data.
+            _questions = Current_Data.reference_Quiz.questions;
 
             //Build the base layout
             BuildPastResultsPage();
@@ -67,7 +76,9 @@ namespace SIT313_Project_2_Quiz
                     //Display the final score
                     new Label
                     {
-                        Text = "Final Score: 2/4",
+                        Text = string.Format("Final score: {0} out of {1}",
+                                    Current_Data.selected_Results.quiz_user_score,
+                                    Current_Data.selected_Results.quiz_total_score),
                         TextColor = Color.FromHex("ffffff"),
                         FontAttributes = FontAttributes.Bold,
                         FontSize = 16,
@@ -75,11 +86,18 @@ namespace SIT313_Project_2_Quiz
                         HorizontalOptions = LayoutOptions.CenterAndExpand
                     },
 
-                    PastResultFields("Date", 1),
-                    PastResultFields("Name", 2),
-                    PastResultFields("Diary", 3),
-                    PastResultFields("Gender", 4)
                 }
+            };
+
+            int index = 0;
+            foreach (string s in Current_Data.selected_Results.quiz_answers)
+            {
+                //Decode the answers
+                byte[] decode_bytes = Convert.FromBase64String(s);
+                string decode_string = Encoding.UTF8.GetString(decode_bytes, 0, decode_bytes.Length);
+
+                result_form.Children.Add(PastResultFields(_questions[index].text, decode_string, Current_Data.selected_Results.quiz_results[index]));
+                index++;
             };
 
             //Combine all components
@@ -117,7 +135,7 @@ namespace SIT313_Project_2_Quiz
         }
 
         //Base layout of textfields.
-        public StackLayout PastResultFields(string title, int id)
+        public StackLayout PastResultFields(string _question, string _answer, int _result)
         {
 
             //For displaying an icon
@@ -147,7 +165,7 @@ namespace SIT313_Project_2_Quiz
                         {
                             new Label
                             {
-                                Text = title + ":", //Set appropriate label.
+                                Text = _question + ":", //Set appropriate label.
                                 HorizontalOptions = LayoutOptions.Start,
                                 VerticalOptions = LayoutOptions.Center
                             },
@@ -157,7 +175,7 @@ namespace SIT313_Project_2_Quiz
                     //The answer text.
                     new Label
                     {
-                        Text = "[ ANSWER ]", //Set dummy text.
+                        Text = "Answer: " + _answer, //Set dummy text.
                         HorizontalOptions = LayoutOptions.Start,
                         VerticalOptions = LayoutOptions.Center
                     }
@@ -165,7 +183,7 @@ namespace SIT313_Project_2_Quiz
             };
 
             //Used to 'mark' wrong questions.
-            if (id == 2 || id == 3)
+            if (_result == 0)
             {
                 //Set an appropriate background color for wrong answers
                 pre_layout.BackgroundColor = Color.FromHex("ffa897");

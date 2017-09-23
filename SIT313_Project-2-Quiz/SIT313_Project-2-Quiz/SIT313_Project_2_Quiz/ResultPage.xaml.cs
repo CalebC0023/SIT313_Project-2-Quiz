@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Diagnostics;
 
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
+using PCLStorage;
 
 namespace SIT313_Project_2_Quiz
 {
@@ -15,9 +17,17 @@ namespace SIT313_Project_2_Quiz
 
         StackLayout bottom_btns, layout_content;
 
+        List<Question> _questions; //Store the list of questions in that particular quiz.
+
         public ResultPage()
         {
             InitializeComponent();
+
+            //Initialize any List.
+            _questions = new List<Question>();
+
+            //Get the necessary data.
+            _questions = Current_Data.selected_Quiz.questions;
 
             //Build the base layout
             BuildResultPage();
@@ -88,7 +98,7 @@ namespace SIT313_Project_2_Quiz
                     //Display the final score
                     new Label
                     {
-                        Text = "Final Score: 2/4",
+                        Text = string.Format("Final score: {0} out of {1}", Current_Data.review_user_score, Current_Data.review_total_score),
                         TextColor = Color.FromHex("ffffff"),
                         FontAttributes = FontAttributes.Bold,
                         FontSize = 16,
@@ -96,11 +106,18 @@ namespace SIT313_Project_2_Quiz
                         HorizontalOptions = LayoutOptions.CenterAndExpand
                     },
 
-                    ResultFields("Date", 1),
-                    ResultFields("Name", 2),
-                    ResultFields("Diary", 3),
-                    ResultFields("Gender", 4)
                 }
+            };
+
+            int index = 0;
+            foreach (string s in Current_Data.all_user_answers)
+            {
+                //Decode the answers
+                byte[] decode_bytes = Convert.FromBase64String(s);
+                string decode_string = Encoding.UTF8.GetString(decode_bytes, 0, decode_bytes.Length);
+
+                result_form.Children.Add(ResultFields(_questions[index].text, decode_string, Current_Data.all_user_results[index]));
+                index++;
             };
 
             //Combine all components
@@ -138,7 +155,7 @@ namespace SIT313_Project_2_Quiz
         }
 
         //Base layout of textfields.
-        public StackLayout ResultFields(string title, int id)
+        public StackLayout ResultFields(string question, string user_answer, int result)
         {
 
             //For displaying an icon
@@ -168,7 +185,7 @@ namespace SIT313_Project_2_Quiz
                         {
                             new Label
                             {
-                                Text = title + ":", //Set appropriate label.
+                                Text = question + ":", //Set appropriate label.
                                 HorizontalOptions = LayoutOptions.Start,
                                 VerticalOptions = LayoutOptions.Center
                             },
@@ -178,7 +195,7 @@ namespace SIT313_Project_2_Quiz
                     //The answer text.
                     new Label
                     {
-                        Text = "[ ANSWER ]", //Set dummy text.
+                        Text = "Answer: " + user_answer, //Set dummy text.
                         HorizontalOptions = LayoutOptions.Start,
                         VerticalOptions = LayoutOptions.Center
                     }
@@ -186,7 +203,7 @@ namespace SIT313_Project_2_Quiz
             };
 
             //Used to 'mark' wrong questions.
-            if (id == 2 || id == 3)
+            if (result == 0)
             {
                 //Set an appropriate background color for wrong answers
                 pre_layout.BackgroundColor = Color.FromHex("ffa897");
@@ -275,16 +292,26 @@ namespace SIT313_Project_2_Quiz
             await Navigation.PushAsync(new ProfilePage());
         }
 
-        //Transition to the 'ReviewPage'.
+        //Start a new quiz.
         async void ToQuiz()
         {
             //Display the 'Dialog Action Sheet' for displaying the different types of quizzes.
-            string action = await DisplayActionSheet("Select type:", "Cancel", null, "10 Questions", "20 Questions", "30 Questions");
-            //Depending on which was selected, load the 'QuizPage'. For Project 1, it will all load the same type.
-            if (action.Contains("10 Questions") || action.Contains("20 Questions") || action.Contains("30 Questions"))
-            {
-                await Navigation.PushAsync(new QuizPage());
-            }
+            string quiz_selection = await DisplayActionSheet("Select type:", "Cancel", null, "Quiz 1", "Quiz 2");
+            //Depending on which was selected, load the 'QuizPage'. For Project 2, there will be two 'set' quizzes available.
+            if (quiz_selection.Contains("Quiz 1"))
+                Current_Data.selected_Quiz = Current_Data.all_quizzes[0]; //Get the first quiz in the list
+            else if (quiz_selection.Contains("Quiz 2"))
+                Current_Data.selected_Quiz = Current_Data.all_quizzes[1]; //Get the second quiz in the list
+
+            Current_Data.ongoingQuiz = false;
+            await Navigation.PushAsync(new QuizPage());
+        }
+
+        //Override the 'back' button event.
+        protected override bool OnBackButtonPressed()
+        {
+            ToProfile();
+            return true;
         }
 
     }

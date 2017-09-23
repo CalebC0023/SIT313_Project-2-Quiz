@@ -38,6 +38,9 @@ namespace SIT313_Project_2_Quiz
             else
                 _profile_username = "Guest";
 
+            //Get user's results.
+            GetUserResults();
+
             //Get user's details (including any ongoing quiz).
             GetCurrentUserDetails();
 
@@ -51,7 +54,7 @@ namespace SIT313_Project_2_Quiz
             //The header label.
             Label header = new Label
             {
-                Text = "Welcome, " + _profile_username + "!", //Set the Profile Label to the current Username.
+                Text = "Welcome, '" + _profile_username + "'!", //Set the Profile Label to the current Username.
                 TextColor = Color.FromHex("FFFFFF"), //Set text colour.
                 FontAttributes = FontAttributes.Bold, //Set text attributes.
                 FontSize = 25, //Set text font.
@@ -185,13 +188,11 @@ namespace SIT313_Project_2_Quiz
             int count = 0;
 
             //The ListView example items.
-            List<string> records = new List<string>
-            {
-                "21/07/2017 - 10 Questions (7/10 points)",
-                "01/03/2017 - 30 Questions (4/30 points)",
-                "17/02/2016 - 20 Questions (15/20 points)",
-                "30/08/2015 - 30 Questions (16/30 points)"
-            };
+            List<string> records = new List<string>();
+
+            //Add all available records
+            foreach (Results user_result in _user_results)
+                records.Add(string.Format("Quiz ID: {0} ({1} out of {2} points)", user_result.quiz_id, user_result.quiz_user_score, user_result.quiz_total_score));
 
             // Create a ListView filled with the user's records.
             ListView list_layout = new ListView
@@ -304,8 +305,8 @@ namespace SIT313_Project_2_Quiz
                 {
 
                     //Get the folder and file name
-                    string folder_name = string.Format("{0}{1}", Current_Data.Username, "ongoing_files"); //The folder name for the specific user's saved ongoing quizzes.
-                    string filename = string.Format("{0}{1}", Current_Data.Username, "_ongoingQuiz.txt"); //This will create/overwrite the specific user's local file.
+                    string folder_name = Current_Data.Username + "ongoing_files"; //The folder name for the specific user's saved ongoing quizzes.
+                    string filename = Current_Data.Username +"_ongoingQuiz.txt"; //This will create/overwrite the specific user's local file.
 
                     //First, get the folder.
                     IFolder read_folder = await Current_Data.root_folder.GetFolderAsync(folder_name);
@@ -338,12 +339,12 @@ namespace SIT313_Project_2_Quiz
                             }
                         }
 
+                        Current_Data.ongoingQuiz = true;
+
                     }
                     //If not, throw an exception.
                     else
                         throw new Exception("The user's file in the 'ongoing_files' folder cannot be found");
-
-                    Current_Data.ongoingQuiz = true;
 
                 }
                 catch (Exception e)
@@ -354,6 +355,29 @@ namespace SIT313_Project_2_Quiz
 
             }
 
+        }
+
+        async void GetUserResults()
+        {
+            //Only registered users have recorded results.
+            if (!Current_Data.isGuest)
+            {
+
+                //The user may only view the past results if all the file list are valid.
+                //(The 'user' list status was already checked beforehand)
+                if (Current_Data.quiz_list_status && Current_Data.result_list_status)
+                {
+                    //Get all the results for this user.
+                    foreach (Results r in Current_Data.all_results)
+                    {
+                        if (r.user == Current_Data.Username)
+                            _user_results.Add(r);
+                    }
+                }
+                else
+                    await this.DisplayAlert("File Alert", "There was an error with retrieving some of the lists. Please try restarting the app.", "OK");
+
+            }
         }
 
         // Transtion to 'QuizPage' after selecting the type of quiz.
@@ -413,7 +437,7 @@ namespace SIT313_Project_2_Quiz
         }
 
         //Transition to the 'PastResultPage'.
-        async void ToPastResult(int index)
+        async void ToPastResult(int _index)
         {
             //The user may only view the past results if all the file list are valid.
             //(The 'user' list status was already checked beforehand)
@@ -421,12 +445,17 @@ namespace SIT313_Project_2_Quiz
             {
 
                 //Store the selected result for viewing.
-
+                Current_Data.selected_Results = _user_results[_index];
+                foreach (RootQuiz qz in Current_Data.all_quizzes)
+                {
+                    if (qz.id == Current_Data.selected_Results.quiz_id)
+                        Current_Data.reference_Quiz = qz;
+                }
 
                 await Navigation.PushAsync(new PastResultPage());
             }
             else
-                await this.DisplayAlert("Quiz Alert", "There was an error with retrieving some of the lists. Please try restarting the app.", "OK");
+                await this.DisplayAlert("File Alert", "There was an error with retrieving some of the lists. Please try restarting the app.", "OK");
 
         }
 

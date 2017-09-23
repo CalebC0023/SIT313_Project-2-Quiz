@@ -432,7 +432,6 @@ namespace SIT313_Project_2_Quiz
         async void ToProfile()
         {
             SaveQuiz(); //Save the current state of the Quiz.
-            await this.DisplayAlert("Saved Quiz", "The quiz has been saved, you may resume whenever.", "OK");
             await Navigation.PushAsync(new ProfilePage());
         }
 
@@ -440,7 +439,6 @@ namespace SIT313_Project_2_Quiz
         async void ToReview()
         {
             SaveQuiz(); //Save the current state of the Quiz.
-            await this.DisplayAlert("Saved Quiz", "The quiz has been saved, you may resume whenever.", "OK");
             await Navigation.PushAsync(new ReviewPage());
         }
 
@@ -450,21 +448,30 @@ namespace SIT313_Project_2_Quiz
             try
             {
 
+                //First, save all the answers.
+                int _index = 0;
+                foreach (string s in user_answers)
+                {
+                    if (s == null || s == "")
+                        saved_answers[_index] = "";
+                    else
+                        saved_answers[_index] = s;
+
+                    _index++;
+                }
+
+                //Next, save the answers (for reviewing when submitting)
+                Current_Data.all_user_answers = new List<string>(); //'Empty' the list
+                foreach (string s in saved_answers)
+                {
+                    byte[] encode_bytes = Encoding.UTF8.GetBytes(s);
+                    string encode_string = Convert.ToBase64String(encode_bytes);
+                    Current_Data.all_user_answers.Add(encode_string);
+                }
+
                 //Only registered users can resume the quizzes.
                 if (!Current_Data.isGuest)
                 {
-
-                    //First, save all the answers.
-                    int _index = 0;
-                    foreach (string s in user_answers)
-                    {
-                        if (s == null || s == "")
-                            saved_answers[_index] = "";
-                        else
-                            saved_answers[_index] = s;
-
-                        _index++;
-                    }
 
                     //Next, build the correct .json string using the recorded data for the file.
                     string content = "";
@@ -544,8 +551,8 @@ namespace SIT313_Project_2_Quiz
                     content += ",\"quiz_user_score\":0}]";
 
                     //Get the folder and file name
-                    string folder_name = string.Format("{0}{1}", Current_Data.Username, "ongoing_files"); //The folder name for the specific user's saved ongoing quizzes.
-                    string filename = string.Format("{0}{1}", Current_Data.Username, "_ongoingQuiz.txt"); //This will create/overwrite the specific user's local file.
+                    string folder_name =  Current_Data.Username + "ongoing_files"; //The folder name for the specific user's saved ongoing quizzes.
+                    string filename = Current_Data.Username + "_ongoingQuiz.txt"; //This will create/overwrite the specific user's local file.
 
                     //First, create/overwrite the folder
                     IFolder create_folder = await Current_Data.root_folder.CreateFolderAsync(folder_name, CreationCollisionOption.ReplaceExisting);
@@ -556,6 +563,7 @@ namespace SIT313_Project_2_Quiz
                     //Finally, try updating the file.
                     await create_file.WriteAllTextAsync(content);
                     Current_Data.ongoingQuiz = true; //After saving, the current state of the quiz is 'ongoing'.
+                    await this.DisplayAlert("Saved Quiz", "The quiz has been saved, you may resume whenever.", "OK");
 
                 }
                 else

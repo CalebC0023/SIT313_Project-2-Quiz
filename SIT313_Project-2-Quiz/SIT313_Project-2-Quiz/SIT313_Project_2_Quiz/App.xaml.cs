@@ -48,6 +48,8 @@ namespace SIT313_Project_2_Quiz
             Current_Data.all_users = new List<User>();
             Current_Data.all_quizzes = new List<RootQuiz>();
             Current_Data.all_results = new List<Results>();
+            Current_Data.all_user_answers = new List<string>();
+            Current_Data.all_user_results = new List<int>();
 
             LoadUserFile(); //First, try loading the 'users' file item.
             LoadQuizFile(); //Next, try loading the 'quizzes' file item.

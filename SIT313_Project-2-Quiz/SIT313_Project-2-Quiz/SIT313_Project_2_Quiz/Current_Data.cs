@@ -50,12 +50,21 @@ namespace SIT313_Project_2_Quiz
 
         //Temporarily store the user selected result for viewing.
         public static Results selected_Results;
+        //Temporarily store the quiz for the selected past result.
+        public static RootQuiz reference_Quiz;
 
         //Temporarily store the saved state of the ongoing quiz.
         public static Results ongoing_Quiz;
-
         //Temporarily store the current quiz being solved.
         public static RootQuiz selected_Quiz;
+        //Temporarily store the user's answers for review
+        public static List<string> all_user_answers;
+        //Temporarily store the user's results for review
+        public static List<int> all_user_results;
+        //Temporarily store the user's scores for review
+        public static int review_total_score;
+        //Temporarily store the user's scores for review
+        public static int review_user_score;
 
         //Check whether a quiz is currently ongoing
         public static bool ongoingQuiz = false;
